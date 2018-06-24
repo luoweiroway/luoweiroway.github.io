@@ -6,8 +6,7 @@ date:  2015-04-20
 updated:  2015-07-26
 author:     "Roway"
 header-img: "http://7xizd0.com1.z0.glb.clouddn.com/blog/virtual_memory.jpg"
-tags: 
-    - 操作系统
+tags: [操作系统]
 ---
 
 关于《深入理解计算机系统》这本书，个人认为这本书的精华是以下三章：
