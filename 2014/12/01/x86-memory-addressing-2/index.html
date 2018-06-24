@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.3.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.3.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=6.3.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico?v=6.3.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.3.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.3.0',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="x86的分段机制是实现程序的逻辑地址到线性地址的映射的一种机制。">
+<meta name="keywords" content="X86内存寻址">
+<meta property="og:type" content="article">
+<meta property="og:title" content="彻底理解内存寻址(二)">
+<meta property="og:url" content="http://luoweiroway.com/2014/12/01/x86-memory-addressing-2/index.html">
+<meta property="og:site_name" content="Roway&#39;s Blog">
+<meta property="og:description" content="x86的分段机制是实现程序的逻辑地址到线性地址的映射的一种机制。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/80386-segment-register.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/80386-segmentation-protection.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/IA-32-segmentation-addressing.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/IA-32-segmentation-addressing-2.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/x86-segmentation-in-linux.jpg">
+<meta property="og:updated_time" content="2018-06-24T17:33:07.346Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="彻底理解内存寻址(二)">
+<meta name="twitter:description" content="x86的分段机制是实现程序的逻辑地址到线性地址的映射的一种机制。">
+<meta name="twitter:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/80386-segment-register.jpg">
+
+
+
+
+
+
+  <link rel="canonical" href="http://luoweiroway.com/2014/12/01/x86-memory-addressing-2/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>彻底理解内存寻址(二) | Roway's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Roway's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+    <a href="/about" rel="section">关于</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags" rel="section">标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories" rel="section">分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives" rel="section">归档</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://luoweiroway.com/2014/12/01/x86-memory-addressing-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Roway">
+      <meta itemprop="description" content="做个纯学术性的实验">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Roway's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">彻底理解内存寻址(二)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2014-12-01 00:00:00" itemprop="dateCreated datePublished" datetime="2014-12-01T00:00:00+08:00">2014-12-01</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2018-06-25 01:33:07" itemprop="dateModified" datetime="2018-06-25T01:33:07+08:00">2018-06-25</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/计算机底层/" itemprop="url" rel="index"><span itemprop="name">计算机底层</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2014/12/01/x86-memory-addressing-2/#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">评论数：</span> <span class="post-comments-count valine-comment-count" data-xid="/2014/12/01/x86-memory-addressing-2/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>x86的分段机制是实现程序的逻辑地址到线性地址的映射的一种机制。</p>
+<a id="more"></a>
+<p>本文以80386保护模式为主。</p>
+<h1 id="1-一些概念"><a href="#1-一些概念" class="headerlink" title="1 一些概念"></a>1 一些概念</h1><ul>
+<li>硬件：16位的段寄存器、分段部件、段描述符高速缓冲器；</li>
+<li>软件(数据结构)：段描述符表、段描述符；</li>
+<li>两个概念：逻辑地址和线性地址。上一篇文章已提到。</li>
+</ul>
+<h2 id="1-1-段寄存器"><a href="#1-1-段寄存器" class="headerlink" title="1.1 段寄存器"></a>1.1 段寄存器</h2><h3 id="1-1-1-8086实模式"><a href="#1-1-1-8086实模式" class="headerlink" title="1.1.1 8086实模式"></a>1.1.1 8086实模式</h3><p>前面一篇文章已经提到，这里就不说了，以80286/80386为主。</p>
+<h3 id="1-1-2-80386保护模式"><a href="#1-1-2-80386保护模式" class="headerlink" title="1.1.2 80386保护模式"></a>1.1.2 80386保护模式</h3><p>逻辑地址是<code>16位的段选择符:32位偏移地址</code>，段寄存器不再保存段基址，取而代之的是一个索引编号，用于引用段描述符表中的表项。这个表为一个简单的数组，元素长度为8字节，每个元素描述一个段。</p>
+<p>80286和80386的分段机制中，段寄存器存放的就是段描述符在段描述符表中的索引，严格来说是前13位存储段描述符的索引，然后第2位(TI)表示是从全局描述符表(GDT)中选择段描述符还是从局部描述符表（LDT）中选择段描述符。剩下两位表示请求者的特权级。</p>
+<p>之所以叫保护模式，就是因为保护模式提供了CPU的不同运行特权，ss（堆栈段寄存器）和ds（数据段寄存器）。这些内容里包含了请求特权级（Requested Privilege Level，简称RPL）字段，用0-3表示。0表示最高特权级，对应内核态，此时它可以访问内核代码，也可以访问用户代码；3表示最低特权级，对应用户态，此时它只能访问用户态代码。cs(代码段寄存器)拥有一个由CPU自己维护的当前特权级字段（Current Privilege Level，简称CPL），这点对我们来说非常重要。<strong>代码段寄存器中的2位宽的CPL字段的值总是等于CPU的当前特权级。</strong>不管CPU内部正在发生什么，只要看一眼cs中的CPL，你就可以知道此刻的特权级了。</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/80386-segment-register.jpg" alt=""></p>
+<h3 id="1-1-3-使用"><a href="#1-1-3-使用" class="headerlink" title="1.1.3 使用"></a>1.1.3 使用</h3><p>分段功能自8086提出后，一直被x86处理器所使用着。<strong>每一条会访问内存的指令都隐式的使用了段寄存器。</strong>比如，一条跳转指令会用到代码段寄存器(cs)，一条压栈指令(stack push instruction)会使用到堆栈段寄存器（ss）。</p>
+<p>在大部分情况下你可以使用指令明确的改写段寄存器的值。段寄存器存储了一个16位的段选择符（segment selector）,它们可以经由机器指令（比如MOV）被直接加载。唯一的例外是<strong>代码段寄存器（cs），它只能被影响程序执行顺序的指令所改变，比如CALL或JMP指令</strong>。虽然分段功能一直是开启的，但其在实模式与保护模式下的运作方式并不相同的。</p>
+<h3 id="1-1-4-内存保护"><a href="#1-1-4-内存保护" class="headerlink" title="1.1.4 内存保护"></a>1.1.4 内存保护</h3><p>CPU会在两个关键点上保护内存：当一个段选择符被加载时，以及，当通过线形地址访问一个内存页时。因此，保护也反映在内存地址转换的过程之中，既包括分段又包括分页。当一个数据段选择符被加载时，就会发生下述的检测过程：</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/80386-segmentation-protection.jpg" alt=""></p>
+<p>因为越高的数值代表越低的特权，上图中的MAX()用于挑出CPL和RPL中特权最低的一个，并与描述符特权级（descriptor privilege level，简称DPL）比较。如果DPL的值大于等于它，那么这个访问就获得许可了。RPL背后的设计思想是：允许内核代码加载特权较低的段。但堆栈段寄存器是个例外，它要求CPL，RPL和DPL这3个值必须完全一致，才可以被加载。</p>
+<p>事实上，段保护功能几乎没什么用，因为现代的内核使用扁平的地址空间。在那里，用户模式的段可以访问整个线性地址空间。真正有用的内存保护发生在分页单元中，即从线性地址转化为物理地址的时候。一个内存页就是由一个页表项（page table entry）所描述的字节块。页表项包含两个与保护有关的字段：一个超级用户标志（supervisor flag），一个读写标志（read/write flag）。超级用户标志是内核所使用的重要的x86内存保护机制。当它开启时，内存页就不能被ring3访问了。尽管读写标志对于实施特权控制并不像前者那么重要，但它依然十分有用。当一个进程被加载后，那些存储了二进制镜像（即代码）的内存页就被标记为只读了，从而可以捕获一些指针错误，比如程序企图通过此指针来写这些内存页。这个标志还被用于在调用fork创建Unix子进程时，实现写时拷贝功能（copy on write）。</p>
+<p>关于CPU特权级切换的详细使用参考：<a href="http://blog.csdn.net/drshenlei/article/details/4265101" target="_blank" rel="noopener">CPU的运行环、特权级与保护</a></p>
+<h2 id="1-2-段描述符"><a href="#1-2-段描述符" class="headerlink" title="1.2 段描述符"></a>1.2 段描述符</h2><p>一个程序可以分解成多个在逻辑上相对独立的模块。每个模块作为一个单独的段，都以该段的起点进行相对编址。所以我们需要用一个数据结构描述各个段的相关信息，比如该段装进内存的基址（段基址），该段的长度，以及该段是否存在内存中等信息，这个数据结构就是段描述符。这样，每个模块都有一个段描述符，用来描述该段的属性，而段描述符表就是段描述符的集合。</p>
+<p>段描述符表的表项就是段描述符，段描述要存储三个信息：基地址、段长度和段属性。用8个字节来存储这三个信息，段基址是32位所以占四个字节，然后用20位来描述段长度，剩下12位就用来存储段的属性信息了。</p>
+<p>参考：<br><a href="http://book.51cto.com/art/201006/208522.htm" target="_blank" rel="noopener">http://book.51cto.com/art/201006/208522.htm</a><br><a href="http://www.cppblog.com/xingkongyun/articles/62743.html" target="_blank" rel="noopener">http://www.cppblog.com/xingkongyun/articles/62743.html</a></p>
+<h3 id="1-2-1-80286"><a href="#1-2-1-80286" class="headerlink" title="1.2.1 80286"></a>1.2.1 80286</h3><p>描述符有八字节，在80286中，组内有最高2个字节保留未用，其余6个字节分别存储着程序（或数据）段所占内存的长度（段限长，2个字节）、起始的物理地址（称段基地址，3个字节）和访问权（1个字节）。内存中每段程序（或数据）均可用一个描述符来表示。</p>
+<h3 id="1-2-2-80386段属性信息"><a href="#1-2-2-80386段属性信息" class="headerlink" title="1.2.2 80386段属性信息"></a>1.2.2 80386段属性信息</h3><p>80386的段描述符内容比80286要丰富很多。</p>
+<p>G：一位，G=0：表示以字节为单位表示段的长度，刚才我们说了我们用20位存储段的长度，那么这样我们段的最大长度就是2^20次方，即1M大小，即我们给程序分段的时候，一个段最大是1M。G=1:表示以4KB表示段的长度，这样我们一个段的最大长度就是2^20次方乘以4KB，即4GB。后边我们会知道linux内核就让这个G等于1，从而直接越过x86的段机制，使逻辑地址不用映射线性地址，二是直接映射到物理地址(分页机制)。</p>
+<p>D:一位，表示操作数的位数，D=1表示32位操作数，D=0表示16位操作数，这显然是为向下兼容而设计的。</p>
+<p>接下来两位暂时没用，可留作扩展。</p>
+<p>P：一位，表示这个段是否在内存中，如果我们要把这个段加载进内存，那么在加载进去的时候把这个值修改为1，否则让它等于0。</p>
+<p>DPL：两位，表示段描述符的特权级。其值从0（最高特权，内核模式）到3（最低特权，用户模式），用于控制对段的访问。</p>
+<p>S：一位，表示这个段是系统段还是用户段。S=0，则为系统段，即内核专门使用的段，S=1,表示用户段，即为程序的代码段、数据段或堆栈段。</p>
+<p>类型占三位：依次是E、D、W。E=0，为数据段描述符，这时D位表示数据的扩展方向，D=0,表示向地址增大的方向扩展，反之，向地址减小的方向扩展。E=1时，直接表示的是数据段，此时W=0时表示数据段不能写（我们就可以想到C++中定义const变量的时候，存储const变量的段肯定是修改了这个值的），W=1,数据段可写。</p>
+<p>保护模式下，有三种类型的描述符表，分别是全局描述符表（GDT），中段描述符表（IDT），局部描述符表（LDT）。为了加快对这些表的访问，Inter设计了三个专门的寄存器，GDTR、IDTR、LDTT，以存放这些表的基地址和表的长度界限。</p>
+<h2 id="1-3-段描述符表"><a href="#1-3-段描述符表" class="headerlink" title="1.3 段描述符表"></a>1.3 段描述符表</h2><p>将不同程序（或数据）段的描述符在内存中连续排列起来，所形成的表称为描述符表。</p>
+<ul>
+<li>由与全局有关的程序（或数据）段的描述符组织在一块的表称全局描述符表（GDT）。一个系统内只有一张GDT。存放该表的物理地址和长度的寄存器称GDTR。</li>
+<li>所有中断服务程序的描述符表称中断描述符表（IDT），一个系统也仅有一张IDT，中断描述符表是CPU用来处理中断和程序异常的，中断描述符表中存储的是门描述符。每一个中断都被赋予一个从0到255的编号，叫做中断向量。<strong>处理器把中断向量作为IDT表项的索引</strong>，用来指出当中断发生时使用哪一个门描述符来处理中断。</li>
+<li>由不涉及全局的程序（或数据）段的描述符所组成的表称局部描述符表（LDT）。</li>
+</ul>
+<p>GDT和LDT各占用64KB内存，含8K个描述符。</p>
+<p>由于一个段描述符是8字节长，因此它在GDT或LDT内的相对地址是由段选择符的最高13位的值乘以8得到的。</p>
+<p>例：如果GDT在0x00020000（这个值保存在gdtr中），且由段选择符所指定的索引号为2，那么相应的段描述符地址是0x00020000 + （2 * 8）= 0x00020010</p>
+<h2 id="1-4-段描述符高速缓冲寄存器"><a href="#1-4-段描述符高速缓冲寄存器" class="headerlink" title="1.4 段描述符高速缓冲寄存器"></a>1.4 段描述符高速缓冲寄存器</h2><p>为了避免在每次存储器访问时，都要访问描述符表而获得对应的段描述符，从80286开始每个段寄存器都配有一个高速缓冲寄存器，称之为<strong>段描述符高速缓冲寄存器</strong>或描述符投影寄存器，对程序员而言它是不可见的，即<strong>每个段寄存器都有一个隐藏部分用于缓存段选择符所对应的那个段描述符</strong>。</p>
+<p>段描述符的内容一旦被访问，就会被cache，所以在随后的访问中，就不再需要去实际读取GDT了，否则会有损性能。即，每当把一个选择子装入到某个段寄存器时，处理器从描述符表中取出相应的描述符，把描述符中的信息保存到对应的高速缓冲寄存器中。<strong>此后对该段访问时，处理器都使用对应高速缓冲寄存器中的描述符信息，而不用再从描述符表中取描述符。</strong></p>
+<p>段描述符高速缓冲寄存器之内保存的描述符信息将一直保存到重新把选择子装载到段寄存器时再更新。程序员尽管不可见段描述符高速缓冲寄存器，但必须注意到它的存在和它的上述更新时机。例如，在改变了描述符表中的某个当前段的描述符后，也要更新对应的段描述符高速缓冲寄存器的内容，即使段选择子未作改变，这可通过重新装载段寄存器实现。</p>
+<p>参考：<a href="http://wenku.baidu.com/link?url=-eUpCYmSxHwy3CnJCpgy08_xNZ-gR3j8SswY5_lscN6hSDm6HzjQWZB8HfFJV70QAaJoXlo9m0dHr6AozjwlBiMBVY0L91iR2g48DmqYjGK" target="_blank" rel="noopener">http://wenku.baidu.com/link?url=-eUpCYmSxHwy3CnJCpgy08_xNZ-gR3j8SswY5_lscN6hSDm6HzjQWZB8HfFJV70QAaJoXlo9m0dHr6AozjwlBiMBVY0L91iR2g48DmqYjGK</a></p>
+<h1 id="2-段地址转换"><a href="#2-段地址转换" class="headerlink" title="2 段地址转换"></a>2 段地址转换</h1><p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/IA-32-segmentation-addressing.jpg" alt=""></p>
+<p>下图更详细一点：</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/IA-32-segmentation-addressing-2.jpg" alt=""></p>
+<p>流程顺序描述如下：</p>
+<ul>
+<li>首选确定要访问的段（方式与x86-16相同），然后决定使用的段寄存器。</li>
+<li>根据段选择符号的TI字段决定是访问GDT还是LDT，他们的首地址则通过GTDR和LDTR来获得。</li>
+<li>将段选择符的Index字段的值*8，然后加上GDT或LDT的首地址，就能得到当前段描述符的地址。（乘以8是因为段描述符为8字节）</li>
+<li>得到段描述符的地址后，可以通过段描述符中BASE获得段的首地址。</li>
+<li>将逻辑地址中32位的偏移地址和段首地址相加就可以得到实际要访问的物理地址。</li>
+</ul>
+<h1 id="3-linux的使用"><a href="#3-linux的使用" class="headerlink" title="3 linux的使用"></a>3 linux的使用</h1><p>与其说linux是如何利用X86中的分段机制，还不如说是如何绕过linux分段机制。</p>
+<p>linux是一个可移植的操作系统，它支持x86，Alpha，arm等多种体系结构。但是Alpha，arm很多体系结构其实是不支持分段机制的，但是他们都支持分页机制。linux为了能移植到x86上，做了不少工作。</p>
+<p>首先要在x86上运行程序，那不可避免要用到段机制，因为X86的分段机制不可关闭。80386的段描述符中有一个表示以字节为单位还是以4KB为单位表示一个段长度的属性位。以4KB为单位，那么一个段最大长度能到4GB。根据这一点，我们把一个段的段基址固定设置为0，然后让G=1，于是我们一个段的最大长度就是4GB了，这个就能和我们4GB的线性地址空间一一映射了。通过这样的处理，就跳过了x86的段机制，逻辑地址和线性地址可以混为一谈了。</p>
+<p>但是x86分段的好处还是要用起来的，比如必须为代码段和数据段创建不同的段，这样linux为代码段和数据段分别创建了一个基地址为0，段长度为4GB的段描述符。不仅如此，由于linux内核运行在特权级0，用户程序运行在特权级3，x86规定说特权级为3的用户程序是不能访问特权级为0的内核代码的，所以linux又分别为内核和用户程序分别创建代码段和数据段。</p>
+<p>于是在arch/x86/include/asm/segment.h中这样定义四个段（即在机器启动过程中段寄存器中放的值）：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __KERNEL_CS     (GDT_ENTRY_KERNEL_CS*8)  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __KERNEL_DS     (GDT_ENTRY_KERNEL_DS*8)  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __USER_DS       (GDT_ENTRY_DEFAULT_USER_DS*8+3)  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __USER_CS       (GDT_ENTRY_DEFAULT_USER_CS*8+3)</span></span><br></pre></td></tr></table></figure>
+<p>其中：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GDT_ENTRY_DEFAULT_USER_CS       14  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GDT_ENTRY_DEFAULT_USER_DS       15  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GDT_ENTRY_KERNEL_BASE           (12)  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GDT_ENTRY_KERNEL_CS             (GDT_ENTRY_KERNEL_BASE+0)  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GDT_ENTRY_KERNEL_DS             (GDT_ENTRY_KERNEL_BASE+1)</span></span><br></pre></td></tr></table></figure>
+<p>于是上边的定义的结果是下边这样：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __KERNEL_CS     0x00C0      <span class="comment">/*内核代码段，index=12，TI=0,RPL=0*/</span>  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __KERNEL_DS     0x00D0      <span class="comment">/*内核数据段，index=13，TI=0,RPL=0*/</span>  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __USER_DS       0x00E3      <span class="comment">/*用户数据段，index=14，TI=0,RPL=3*/</span>  </span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __USER_CS       0x00F3      <span class="comment">/*用户代码段，index=15，TI=0,RPL=3*/</span></span></span><br></pre></td></tr></table></figure>
+<p>于是我们可以用12,13,14,15四个索引来找到我们四个段所对应的段描述符，并且我们把内核代码段的特权声明为0，用户代码段的特权为3，TI为0表示我们总是访问全局描述符表。</p>
+<p>在我们对应的段描述符中我们把G设置为1，段上限规定为0xfffff，就巧妙的绕过了x86的分段机制。</p>
+<p>来看看Linux 用户模式应用程序的一个跳转指令：</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/x86-segmentation-in-linux.jpg" alt=""></p>
+<p>但在这里我不能忽略的一个问题就是，我们把四个段的上限全部设置为4G，那就完全破坏了段的保护，就是说，我们有可能随随便便就修改了我们的其他段的数据。</p>
+<p>但是现在还是个线性地址，我们还是有处理这个问题的办法，这就是80386中同时引入的分页机制，即在线性地址与物理地址之间来一层映射。</p>
+<h1 id="4-参考："><a href="#4-参考：" class="headerlink" title="4 参考："></a>4 参考：</h1><p><a href="http://blog.csdn.net/bcs_01/article/category/1409609" target="_blank" rel="noopener">http://blog.csdn.net/bcs_01/article/category/1409609</a><br><a href="http://www.ahlinux.com/start/kernel/6876.html" target="_blank" rel="noopener">http://www.ahlinux.com/start/kernel/6876.html</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创，如果觉得文章对你有用，是不是可以？</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Roway 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Roway 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Roway</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://luoweiroway.com/2014/12/01/x86-memory-addressing-2/" title="彻底理解内存寻址(二)">http://luoweiroway.com/2014/12/01/x86-memory-addressing-2/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/X86内存寻址/" rel="tag"># X86内存寻址</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+
+        
+
+        
+          
+          <div id="needsharebutton-postbottom">
+            <span class="btn">
+              <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </span>
+          </div>
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/11/20/sshfs/" rel="next" title="sshfs使用-windows上远程访问linux端目录">
+                <i class="fa fa-chevron-left"></i> sshfs使用-windows上远程访问linux端目录
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/12/01/x86-memory-addressing-1/" rel="prev" title="彻底理解内存寻址(一)">
+                彻底理解内存寻址(一) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Roway</p>
+              <p class="site-description motion-element" itemprop="description">做个纯学术性的实验</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">11</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">5</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">8</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-一些概念"><span class="nav-number">1.</span> <span class="nav-text">1 一些概念</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-段寄存器"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 段寄存器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-1-8086实模式"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.1.1 8086实模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-2-80386保护模式"><span class="nav-number">1.1.2.</span> <span class="nav-text">1.1.2 80386保护模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-3-使用"><span class="nav-number">1.1.3.</span> <span class="nav-text">1.1.3 使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-4-内存保护"><span class="nav-number">1.1.4.</span> <span class="nav-text">1.1.4 内存保护</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-段描述符"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 段描述符</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-1-80286"><span class="nav-number">1.2.1.</span> <span class="nav-text">1.2.1 80286</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-2-80386段属性信息"><span class="nav-number">1.2.2.</span> <span class="nav-text">1.2.2 80386段属性信息</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-段描述符表"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 段描述符表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-段描述符高速缓冲寄存器"><span class="nav-number">1.4.</span> <span class="nav-text">1.4 段描述符高速缓冲寄存器</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-段地址转换"><span class="nav-number">2.</span> <span class="nav-text">2 段地址转换</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-linux的使用"><span class="nav-number">3.</span> <span class="nav-text">3 linux的使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-参考："><span class="nav-number">4.</span> <span class="nav-text">4 参考：</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Roway</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动 v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/theme-next/hexo-theme-next">NexT.Mist</a> v6.3.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.3.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.3.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.3.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.3.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.3.0"></script>
+
+
+
+  
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  
+  
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(function (item) {
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: 'rU18vmNsvnsrkTOTAEb6Jyxz-gzGzoHsz',
+        appKey: 'L6egehNzGDx5VexrgNUNRvR1',
+        placeholder: '留下条评论，得唔得？',
+        avatar:'mm',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'manual') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+      pbOptions = {};
+      
+          pbOptions.iconStyle = "box";
+      
+          pbOptions.boxForm = "horizontal";
+      
+          pbOptions.position = "bottomCenter";
+      
+          pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+    
+    
+  </script>
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+  
+  <script src="/lib/bookmark/bookmark.min.js?v=1.0"></script>
+  <script type="text/javascript">
+  
+    bookmark.scrollToMark('auto', "#更多");
+  
+  </script>
+
+
+  
+
+</body>
+</html>

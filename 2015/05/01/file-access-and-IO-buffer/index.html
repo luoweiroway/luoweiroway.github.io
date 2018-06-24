@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+  <link rel="stylesheet" href="/lib/needsharebutton/needsharebutton.css">
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.3.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.3.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=6.3.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico?v=6.3.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.3.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.3.0',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="相关头文件">
+<meta name="keywords" content="linux kernel,C库">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux C标准库函数使用">
+<meta property="og:url" content="http://luoweiroway.com/2015/05/01/file-access-and-IO-buffer/index.html">
+<meta property="og:site_name" content="Roway&#39;s Blog">
+<meta property="og:description" content="相关头文件">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/setvbuf-setbuf.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-1.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-2.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-3.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-4.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-5.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-6.jpg">
+<meta property="og:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-7.jpg">
+<meta property="og:updated_time" content="2018-06-24T17:33:07.349Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="linux C标准库函数使用">
+<meta name="twitter:description" content="相关头文件">
+<meta name="twitter:image" content="http://7xizd0.com1.z0.glb.clouddn.com/blog/setvbuf-setbuf.jpg">
+
+
+
+
+
+
+  <link rel="canonical" href="http://luoweiroway.com/2015/05/01/file-access-and-IO-buffer/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>linux C标准库函数使用 | Roway's Blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Roway's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+    <a href="/about" rel="section">关于</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags" rel="section">标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories" rel="section">分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives" rel="section">归档</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://luoweiroway.com/2015/05/01/file-access-and-IO-buffer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Roway">
+      <meta itemprop="description" content="做个纯学术性的实验">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Roway's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">linux C标准库函数使用
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2015-05-01 00:00:00" itemprop="dateCreated datePublished" datetime="2015-05-01T00:00:00+08:00">2015-05-01</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2018-06-25 01:33:07" itemprop="dateModified" datetime="2018-06-25T01:33:07+08:00">2018-06-25</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/内核与系统编程/" itemprop="url" rel="index"><span itemprop="name">内核与系统编程</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/05/01/file-access-and-IO-buffer/#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">评论数：</span> <span class="post-comments-count valine-comment-count" data-xid="/2015/05/01/file-access-and-IO-buffer/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="相关头文件"><a href="#相关头文件" class="headerlink" title="相关头文件"></a>相关头文件</h1><a id="more"></a>
+<blockquote>
+<p>stdio.h</p>
+<blockquote>
+<p>FILE <em> fopen ( const char </em> filename, const char <em> mode );<br>int fclose ( FILE </em> stream );<br>FILE <em> freopen ( const char </em> filename, const char <em> mode, FILE </em> stream );<br>void setbuf ( FILE <em> stream, char </em> buffer );<br>int setvbuf ( FILE <em> stream, char </em> buffer, int mode, size_t size );<br>int fflush ( FILE * stream );</p>
+</blockquote>
+</blockquote>
+<h1 id="1-两类IO"><a href="#1-两类IO" class="headerlink" title="1 两类IO"></a>1 两类IO</h1><ul>
+<li><p>Unbuffered I/O，是操作系统内核部分，也是系统调用。因为这里的不带缓冲指用户空间没有缓冲，即在用户的进程中对这两个函数不会缓冲，内核空间是有缓存的；</p>
+</li>
+<li><p>Buffered I/O，严格来讲应该叫User buffered IO ， C库里面的这些IO也叫Standard IO。这里的缓冲是在用户层再建立一个缓冲区，这个缓冲区的分配和优化长度等细节都是标准IO库代你处理，不依赖系统内核，所以移植性强，一般是为了效率考虑对这些系统调用的封装。目的是为了减少system calls次数以及block-align I/O operations。比如在写的时候，可以先把数据只写在用户空间缓冲区，当设定阈值(ideally, the underlying filesystem’s block size or an integer multiple thereof)达到时，再调用write系统调用。</p>
+</li>
+<li><p>Unix I/O函数都是针对文件描述符，对于C标准I/O库来说，打开的文件由流(FILE *指针)标识。当打开一个流时，使一个流与文件相结合，标准I/O函数fopen返回一个指向FILE对象的指针。该对象通常是一个结构，它包含了I/O库为管理该流所需要的所有信息：用于实际I/O的文件描述符，指向流缓冲的指针，缓冲区的长度，当前在缓冲区中的字符数，出错标志等等。</p>
+</li>
+</ul>
+<h2 id="1-1-磁盘文件IO过程"><a href="#1-1-磁盘文件IO过程" class="headerlink" title="1.1 磁盘文件IO过程"></a>1.1 磁盘文件IO过程</h2><p>当应用程序尝试读取某块数据的时候，如果这块数据已经存放在页缓存(内核高速缓冲)中，那么这块数据就可以立即返回给应用程序，而不需要经过实际的物理读盘操作。当然，如果数据在应用程序读取之前并未被存放在页缓存中，那么就需要先将数据从磁盘读到页缓存中去。</p>
+<p>对于写操作来说，应用程序也会将数据先写到页缓存中去（如果是调用标准库I/O进行写，那么首先是写到标准库的缓冲区内，如果标准库的缓冲区写满以后，再写到页缓冲内；如果是系统调用，那么直接写到页缓冲内）。</p>
+<p>处于页缓存中的数据是否被立即写到磁盘上去取决于应用程序所采用的写操作机制：如果用户采用的是同步写机制,那么数据会立即被写回到磁盘上，应用程序会一直等到数据被写完为止；如果用户采用的是延迟写机制，那么应用程序就完全不需要等到数据全部被写回到磁盘，数据只要被写到页缓存中去就可以了。在延迟写机制的情况下，操作系统会定期地将放在页缓存中的数据刷到磁盘上。与异步写机制不同的是，延迟写机制在数据完全写到磁盘上得时候不会通知应用程序，而异步写机制在数据完全写到磁盘上得时候是会返回给应用程序的。所以延迟写机制本身是存在数据丢失的风险的，而异步写机制则不会有这方面的担心。</p>
+<ul>
+<li>无缓冲IO操作数据流向路径：数据——内核缓存区——磁盘</li>
+<li>标准IO操作数据流向路径：数据——流缓冲区——内核缓存区——磁盘</li>
+<li>访问大量小数据时，标准IO会占优，而访问数据量较大的文件时，无缓存IO会占优。</li>
+</ul>
+<h1 id="2-标准库IO缓冲区"><a href="#2-标准库IO缓冲区" class="headerlink" title="2 标准库IO缓冲区"></a>2 标准库IO缓冲区</h1><p>用户程序调用C标准I/O库函数读写文件或设备，而这些库函数要通过系统调用把读写请求传给内核，最终由内核驱动磁盘或设备完成I/O操作。C标准库为每个打开的文件分配一个I/O缓冲区以加速读写操作，通过文件的FILE结构体可以找到这个缓冲区，这样可以<strong>让用户调用读写函数大多数时候都在I/O缓冲区中读写</strong>，只有少数时候需要把读写请求传给内核。所以，标准I/O库提供缓冲的目的是减少read和write调用次数，节省执行I/O所需的CPU时间。</p>
+<p>以fgetc/fputc为例，当用户程序第一次调用fgetc读一个字节时，fgetc函数可能通过系统调用进入内核读1K字节(如果文件有这么大)到I/O缓冲区中，然后返回I/O缓冲区中的第一个字节给用户，把读写位置指向I/O缓冲区中的第二个字符，以后用户再调fgetc，就直接从I/O缓冲区中读取，而不需要进内核了，当用户把这1K字节都读完之后，再次调用fgetc时，fgetc函数会再次进入内核读1K字节到I/O缓冲区中。</p>
+<p>C标准库之所以会从内核预读一些数据放在I/O缓冲区中，是希望用户程序随后要用到这些数据，C标准库的I/O缓冲区也在用户空间，直接从用户空间读取数据比进内核读数据要快得多，C标准库和内核之间的关系就像在“Memory Hierarchy”中CPU、Cache和内存之间的关系一样。</p>
+<p>另一方面，用户程序调用fputc通常只是写到I/O缓冲区中，这样fputc函数可以很快地返回，如果I/O缓冲区写满了，fputc就通过系统调用把I/O缓冲区中的数据传给内核，内核最终把数据写到磁盘。I/O缓冲区中的数据除了由标准I/O库函数自动冲洗外，也可手动立即强制冲洗，对应的库函数是fflush。</p>
+<p>fclose函数在关闭文件之前也会做flush操作，它会冲洗输出缓冲的输出数据，丢弃输入缓冲的输入数据。当一个进程正常终止时，比如调用exit(), 或从main返回(main 函数被启动代码这样调用<code>exit(main(argc, argv));</code>)，exit()会执行标准I/O库的清理关闭操作：为所有打开流调用fclose(),然后通过_exit系统调用进入内核退出当前进程。</p>
+<h2 id="2-1-缓冲区类型"><a href="#2-1-缓冲区类型" class="headerlink" title="2.1 缓冲区类型"></a>2.1 缓冲区类型</h2><p>C标准库的I/O缓冲区有三种类型：全缓冲、行缓冲和无缓冲。当用户程序调用库函数做写操作时，不同类型的缓冲区具有不同的特性。</p>
+<ul>
+<li>全缓冲：如果缓冲区满了就写回内核(调用write系统调用)。常规文件(磁盘上的文件)通常是全缓冲的。</li>
+<li>行缓冲：如果用户程序写的数据中有换行符或者缓冲区写满了就写回内核。标准输入和标准输出对应终端设备时通常是行缓冲的。</li>
+<li>无缓冲：用户程序每次调库函数做写操作都要通过系统调用写回内核。标准错误输出通常是无缓冲的，这样用户程序产生的错误信息可以尽快输出到设备。</li>
+</ul>
+<p>对任何一个给定的流，如果我们并不喜欢这些系统默认的情况，则可调用下列两个函数中的一个更改缓冲类型：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">setbuf</span><span class="params">( FILE *<span class="keyword">restrict</span> fp, <span class="keyword">char</span> *<span class="keyword">restrict</span> buf )</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">setvbuf</span><span class="params">( FILE *<span class="keyword">restrict</span> fp, <span class="keyword">char</span> *<span class="keyword">restrict</span> buf, <span class="keyword">int</span> mode, <span class="keyword">size_t</span> size )</span></span>;</span><br><span class="line"><span class="comment">//返回值：若成功则返回0，若出错则返回非0值</span></span><br></pre></td></tr></table></figure>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/setvbuf-setbuf.jpg" alt=""></p>
+<p>上表中，合适长度指的是由stat结构中的成员st_blksize所指定，如果系统不能为该流决定此值（例如若此流涉及一个设备或一个管道），则分配长度为BUFSIZ(一般为1024)的缓存。</p>
+<h1 id="fflush"><a href="#fflush" class="headerlink" title="fflush"></a>fflush</h1><ul>
+<li><strong>原型</strong>：<br>int fflush ( FILE * stream );</li>
+<li><p><strong>功能</strong>：</p>
+<ul>
+<li>如果<em>stream</em>被打开来<strong>写</strong>(或者<strong>update</strong>打开，并且最近一次IO是输出操作)，那此函数将输出缓冲区的任何未写入数据写入文件（严格来讲，是写入内存缓存区高速缓存）。</li>
+<li>如果<em>stream</em>指向输入流（如stdin），那么fflush函数的行为是不确定的。故而使用 fflush(stdin)是不正确的，在有些库实现中，冲刷正在读的stream会导致输入缓冲区内容被丢弃。由于标准未规定，所以这不是一个可移植行为。在其它所有标准未规定的情况下，该调用行为取决于相应库的实现。见示例2。</li>
+<li>如果stream参数是null，那么会对所有打开文件的IO缓冲区做flush操作；</li>
+<li>该函数调用之后stream仍然保持打开；</li>
+<li>当一个流关闭后，比如调用fclose，或者程序正常终止(因为exit()会执行标准I/O库的清理关闭操作，即为所有打开流调用fclose())了，文件的所有缓冲都会被自动冲刷，而且还会调用fsync确保将其写到磁盘上。</li>
+</ul>
+</li>
+<li><p><strong>参数</strong>：<br><em>stream</em>：Pointer to a FILE object that identifies the stream.</p>
+</li>
+<li><p><strong>返回值</strong>：<br>成功则返回零，如果发生错误，则返回EOF， error indicator也会被设置。</p>
+</li>
+<li><strong>使用</strong>：<ul>
+<li>无论当前采用何种缓冲区模式，在任何时候都可以使用fflush库函数强制将stream输出缓冲区的数据刷新到<code>内核缓冲区</code>，注意与fsync区分，详细分析见后文<a href="http://todo" target="_blank" rel="noopener">I/O缓冲区探讨</a>。</li>
+<li>在包括glibc库在内的许多C函数库实现中，<strong>若stdin和stdout指向同一终端，那么无论何时从stdin中读取输入时，都将隐含调用一次fflush(stdout)函数</strong>,这将刷新写入stdout的任何提示。当然SUSv3和C99并未规定这个行为，所以有的C库没有实现这点，要保证程序的可移植性最好显式调用fflush(stdout)。</li>
+<li>若打开一个流同时用于输入和输出，则C99标准提出了两个要求。首先，一个输出操作后不能紧跟一个输入操作，必须在二者之间调用fflush函数或是一个文件定位函数(fseek,fsetpos,rewind等)。其次，一个输入操作后不能紧跟一个输出操作，必须在二者之间调用一个文件定位函数，除非输入操作遭遇文件结尾。</li>
+</ul>
+</li>
+<li><strong>示例 1</strong>：</li>
+</ul>
+<p>当文件以update (既可读又可写)方式打开,output操作之后input之前，stream必须被冲刷。可以<strong>调用repositioning相关的调用(fseek, fsetpos, rewind等)</strong>或者调用精确的fflush：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/****************************************************************</span></span><br><span class="line"><span class="comment">***Author: luowei</span></span><br><span class="line"><span class="comment">***Description: none</span></span><br><span class="line"><span class="comment">****************************************************************/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="keyword">char</span> mybuffer[<span class="number">80</span>];</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">   FILE * fp; </span><br><span class="line">   fp = fopen (<span class="string">"test.txt"</span>,<span class="string">"r+"</span>);</span><br><span class="line">   <span class="keyword">if</span> (fp == <span class="literal">NULL</span>) perror (<span class="string">"Error opening file"</span>);</span><br><span class="line">   <span class="keyword">else</span> &#123;</span><br><span class="line">     <span class="built_in">fputs</span> (<span class="string">"test"</span>,fp);</span><br><span class="line">     <span class="comment">//fflush (fp);    // flushing or repositioning required</span></span><br><span class="line">     rewind(fp);</span><br><span class="line">     fgets (mybuffer,<span class="number">80</span>,fp);</span><br><span class="line">     <span class="built_in">puts</span> (mybuffer);</span><br><span class="line">     fclose (fp);</span><br><span class="line">     <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>示例 2</strong>：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/****************************************************************</span></span><br><span class="line"><span class="comment">***Author: luowei</span></span><br><span class="line"><span class="comment">***Description: none</span></span><br><span class="line"><span class="comment">****************************************************************/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> num,j,scanf_ret;</span><br><span class="line">    <span class="keyword">for</span> (j=<span class="number">0</span>;j&lt;<span class="number">10</span>;j++) &#123;</span><br><span class="line">	    <span class="built_in">fputs</span>(<span class="string">"Input an integer: "</span>, <span class="built_in">stdout</span>);</span><br><span class="line">	    scanf_ret = <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;num);</span><br><span class="line">	    <span class="built_in">printf</span>(<span class="string">"num=%d,scanf_ret=%d\n"</span>, num,scanf_ret);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当输入非数字时，比如字母时，那scanf会读取失败，同时输入缓冲区不变，也就是刚输入的字母还在缓冲区中，<br>运行结果：<br>可以用FILE* fp指针，并赋值为stdin，这样可以在调试中观察输入缓冲区的内容。第一次输入之前，stdin缓冲区如下：</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-1.jpg" alt=""></p>
+<p>第一次输入，输入数字1scanf调用成功，读取数字1：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Input an integer: 1</span><br><span class="line">num=1,scanf_ret=1</span><br></pre></td></tr></table></figure>
+<p>此时stdin缓冲区如下，可以发现<code>fp-&gt;_base</code>指向的缓冲区大小为0x1000，目前有三个字符，分别为<code>1\n\n</code>（前两个字节为用户输入的字符，即1和换行符\n，再后面一个\n自己猜测应该是标准库额外加入的，如果输入123，则缓冲区有5个字符，分别为<code>123\n\n</code>），输入函数运行完毕后，<code>fp-&gt;_ptr</code>在<code>fp-&gt;_base</code>后面一字节，表明读取了一个字节给用户，用户输入的换行符和系统加的换行符还在后面。</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-2.jpg" alt=""></p>
+<p>第二次输入时，输入12345678，scanf调用成功，读取数字12345678：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Input an integer: 12345678</span><br><span class="line">num=12345678,scanf_ret=1</span><br></pre></td></tr></table></figure>
+<p>此时<code>fp-&gt;_base</code>指向的缓冲区由<code>1\n\n</code>被覆盖为<code>12345678\n\n</code>，输入函数运行完毕后，<code>fp-&gt;_ptr</code>在<code>fp-&gt;_base</code>后面8字节，表明读取了8个字节给用户，然后转换为数字12345678，用户输入的换行符和系统加的换行符还在后面。</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-3.jpg" alt=""></p>
+<p>第三次输入，输入b，scanf调用失败，返回值为0，num值不变：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Input an integer: b</span><br><span class="line">num=12345678,scanf_ret=0</span><br></pre></td></tr></table></figure>
+<p>此时，<code>fp-&gt;_base</code>指向的缓冲区由<code>12345678\n\n</code>覆盖为<code>b\n\n45678\n\n</code>，只覆盖了前面的123，因为只输入了b和换行符，加上系统加的换行符，所以前面的123被覆盖为b\n\n，但是<code>fp-&gt;_ptr</code>仍然是<code>fp-&gt;_base</code>，并没有往后推移，表明调用失败，因为b不是一个数字字符。可以看到此时的<code>fp-&gt;_cnt</code>（其指代用户输入的字符数（包括换行符）被成功读取后剩下的数量）不为1，表明用户输入的b和\n被传送至缓冲区后都没有被成功读取，前面成功读取的都为1（剩下用户输入的换行符）.</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-4.jpg" alt=""></p>
+<p>第三次运行scanf函数时，因为<code>fp-&gt;_ptr</code>指向的并不是\n，换句话说scanf函数的用户态代码还以为内核已经把数据传过来了，于是就直接读取，然后发现b不是数字字符，于是又返回调用失败，num值仍然不变。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Input an integer: num=12345678,scanf_ret=0</span><br></pre></td></tr></table></figure>
+<p>此时，stdin缓冲区不变：</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-5.jpg" alt=""></p>
+<p>再之后，都是如此。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Input an integer: num=12345678,scanf_ret=0</span><br><span class="line">Input an integer: num=12345678,scanf_ret=0</span><br><span class="line">Input an integer: num=12345678,scanf_ret=0</span><br><span class="line">Input an integer: num=12345678,scanf_ret=0</span><br><span class="line">Input an integer: num=12345678,scanf_ret=0</span><br><span class="line">Input an integer: num=12345678,scanf_ret=0</span><br></pre></td></tr></table></figure>
+<p>所以说，当scanf调用失败后，程序员需要去清空输入缓冲区，有的C库实现了fflush(stdin),比如我们在代码中加入：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/****************************************************************</span></span><br><span class="line"><span class="comment">***Author: luowei</span></span><br><span class="line"><span class="comment">***Description: none</span></span><br><span class="line"><span class="comment">****************************************************************/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> num,j,scanf_ret;</span><br><span class="line">    <span class="keyword">for</span> (j=<span class="number">0</span>;j&lt;<span class="number">10</span>;j++) &#123;</span><br><span class="line">	    <span class="built_in">fputs</span>(<span class="string">"Input an integer: "</span>, <span class="built_in">stdout</span>);</span><br><span class="line">	    scanf_ret = <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;num);</span><br><span class="line">	    <span class="keyword">if</span>(scanf_ret==<span class="number">0</span>)&#123;</span><br><span class="line">	        fflush(<span class="built_in">stdin</span>);</span><br><span class="line">        &#125;</span><br><span class="line">	    <span class="built_in">printf</span>(<span class="string">"num=%d,scanf_ret=%d\n"</span>, num,scanf_ret);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>假设之前因为输入b而导致scanf调用失败，此时调用fflush清空输入缓冲区后，效果如下：</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-6.jpg" alt=""></p>
+<p>可以发现其将<code>fp-&gt;_cnt</code>变为0，下次再调用scanf函数，虽然<code>fp-&gt;_ptr</code>仍然是<code>fp-&gt;_base</code>指向，但是scanf已经可以正常让用户输入而不是直接读取缓冲区。</p>
+<p>可以发现，scanf函数在运行时：</p>
+<ul>
+<li>先判断需不需要调用读系统调用：<ul>
+<li>如果<code>fp-&gt;_cnt</code>等于0，或者<code>fp-&gt;_cnt</code>不等于0但是其指向的内容是换行符\n，则调用读系统调用，用户需要输入新的输入，输入的内容（包括输入的换行符）加上库再添加的换行符会覆盖<code>fp-&gt;_base</code>指向的区域，然后<code>fp-&gt;_ptr</code>也会先定位到<code>fp-&gt;_base</code>，然后从<code>fp-&gt;_ptr</code>指向的位置开始读取（库缓冲区到用户态的读取）。</li>
+<li>如果<code>fp-&gt;_cnt</code>不等于0且其指向的内容不是换行符\n，则表明缓冲区仍有内容，scanf这时就不去调用读系统调用，也就是不需要用户输入新的输入，而是直接用已有的输入去进行读取处理，从<code>fp-&gt;_ptr</code>指向的位置开始读取（库缓冲区到用户态的读取）。</li>
+</ul>
+</li>
+<li>读成功则<code>fp-&gt;_ptr</code>往后移动，读失败则<code>fp-&gt;_ptr</code>不动，当内容为非数字时，比如字母之类的字符，scanf会返回失败。</li>
+</ul>
+<p>当然，由于fflush(stdin)不是所有的C库都支持，所以我们可以自己写代码来完成清空缓冲区的内容，而且是真正的清空，不像fflush(stdin)那样，只是将<code>fp-&gt;_cnt</code>置零，<code>fp-&gt;_ptr</code>不变。代码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/****************************************************************</span></span><br><span class="line"><span class="comment">***Author: luowei</span></span><br><span class="line"><span class="comment">***Description: none</span></span><br><span class="line"><span class="comment">****************************************************************/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> num,j,scanf_ret;</span><br><span class="line">    <span class="keyword">for</span> (j=<span class="number">0</span>;j&lt;<span class="number">10</span>;j++) &#123;</span><br><span class="line">	    <span class="built_in">fputs</span>(<span class="string">"Input an integer: "</span>, <span class="built_in">stdout</span>);</span><br><span class="line">	    scanf_ret = <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;num);</span><br><span class="line">	    <span class="keyword">if</span>(scanf_ret==<span class="number">0</span>)&#123;</span><br><span class="line">	        <span class="comment">//fflush(stdin);</span></span><br><span class="line">	        <span class="keyword">int</span> c;</span><br><span class="line">	        <span class="keyword">while</span> ( (c=getchar()) != <span class="string">'\n'</span> &amp;&amp; c != EOF );</span><br><span class="line">        &#125;</span><br><span class="line">	    <span class="built_in">printf</span>(<span class="string">"num=%d,scanf_ret=%d\n"</span>, num,scanf_ret);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果因为输入错误字符，比如b，则运行完12-16行之间的代码后，效果如下图：</p>
+<p><img src="http://7xizd0.com1.z0.glb.clouddn.com/blog/stdio-stdin-7.jpg" alt=""></p>
+<p>可以看到，由于缓冲区仍有内容，getchar不会调用读系统调用，循环调用getchar读取后，<code>fp-&gt;_ptr</code>指向由<code>b\n\n</code>变为<code>\n</code>，也就是说之前输入的b和换行符已被用getchar函数读走，此时<code>fp-&gt;_cnt</code>为0，这时再运行scanf就可以让用户正常输入了。当然，如果此时再调用getchar，那么getchar就会调用读系统调用了，用于需要输入内容以供getchar读取。这里直接使用gets函数效果与上面完全一样。</p>
+<p><strong>总结</strong>：<br>getchar、gets、scanf这些输入函数，都会先判断要不要调用读系统调用：</p>
+<ul>
+<li>如果<code>fp-&gt;_cnt</code>等于0，则所有读IO函数都需要调用读系统调用。</li>
+<li>如果<code>fp-&gt;_cnt</code>不等于0且<code>fp-&gt;_ptr</code>指向的第一个字节是换行符：getchar和gets直接会读取缓冲区，getchar会将换行符返回，而gets会将读取的换行符丢弃；scanf会调用读系统调用让用户输入。</li>
+<li>如果<code>fp-&gt;_cnt</code>不等于0且<code>fp-&gt;_ptr</code>指向的第一个字节不是换行符，那三者都不会调用读系统调用，而是直接从输入缓冲区中读内容以作相应处理。</li>
+</ul>
+<h1 id="fclose"><a href="#fclose" class="headerlink" title="fclose"></a>fclose</h1><ul>
+<li><p><strong>原型</strong>：int fclose ( FILE * stream );</p>
+</li>
+<li><p><strong>功能</strong>：</p>
+<ul>
+<li>关闭<em>stream</em>指定的文件；</li>
+<li>所有该stream相关的内部缓冲都会与其解除映射关系并被刷洗：未写入的输出缓冲区内容会被写入，未读的输入缓冲区内容会被丢弃(the content of any unwritten output buffer is written and the content of any unread input buffer is discarded.)；</li>
+<li>即使该调用失败，参数指定的stream也不再与其文件及缓冲相映射。</li>
+</ul>
+</li>
+<li><p><strong>参数</strong>：<br><em>stream</em>：Pointer to a FILE object that identifies the stream.</p>
+</li>
+<li><p><strong>返回值</strong>：<br>如果stream成功关闭则返回零，如果发生错误，则返回EOF。</p>
+</li>
+</ul>
+<blockquote>
+<p>updated:20150726</p>
+</blockquote>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创，如果觉得文章对你有用，是不是可以？</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Roway 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Roway 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Roway</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://luoweiroway.com/2015/05/01/file-access-and-IO-buffer/" title="linux C标准库函数使用">http://luoweiroway.com/2015/05/01/file-access-and-IO-buffer/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux-kernel/" rel="tag"># linux kernel</a>
+          
+            <a href="/tags/C库/" rel="tag"># C库</a>
+          
+        </div>
+      
+
+      
+      
+        <div class="post-widgets">
+        
+
+        
+
+        
+          
+          <div id="needsharebutton-postbottom">
+            <span class="btn">
+              <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </span>
+          </div>
+        
+        </div>
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/04/20/csapp-virtual-memory/" rel="next" title="CSAPP-虚拟存储器">
+                <i class="fa fa-chevron-left"></i> CSAPP-虚拟存储器
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/05/10/syscall/" rel="prev" title="如何调用系统调用">
+                如何调用系统调用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Roway</p>
+              <p class="site-description motion-element" itemprop="description">做个纯学术性的实验</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">11</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">5</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">8</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#相关头文件"><span class="nav-number">1.</span> <span class="nav-text">相关头文件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-两类IO"><span class="nav-number">2.</span> <span class="nav-text">1 两类IO</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-磁盘文件IO过程"><span class="nav-number">2.1.</span> <span class="nav-text">1.1 磁盘文件IO过程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-标准库IO缓冲区"><span class="nav-number">3.</span> <span class="nav-text">2 标准库IO缓冲区</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-缓冲区类型"><span class="nav-number">3.1.</span> <span class="nav-text">2.1 缓冲区类型</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#fflush"><span class="nav-number">4.</span> <span class="nav-text">fflush</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#fclose"><span class="nav-number">5.</span> <span class="nav-text">fclose</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Roway</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动 v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/theme-next/hexo-theme-next">NexT.Mist</a> v6.3.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.3.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.3.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.3.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.3.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.3.0"></script>
+
+
+
+  
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  
+  
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(function (item) {
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: 'rU18vmNsvnsrkTOTAEb6Jyxz-gzGzoHsz',
+        appKey: 'L6egehNzGDx5VexrgNUNRvR1',
+        placeholder: '留下条评论，得唔得？',
+        avatar:'mm',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'manual') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+  
+  <script src="/lib/needsharebutton/needsharebutton.js"></script>
+
+  <script>
+    
+      pbOptions = {};
+      
+          pbOptions.iconStyle = "box";
+      
+          pbOptions.boxForm = "horizontal";
+      
+          pbOptions.position = "bottomCenter";
+      
+          pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+    
+    
+  </script>
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+  
+  <script src="/lib/bookmark/bookmark.min.js?v=1.0"></script>
+  <script type="text/javascript">
+  
+    bookmark.scrollToMark('auto', "#更多");
+  
+  </script>
+
+
+  
+
+</body>
+</html>
